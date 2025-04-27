@@ -1,0 +1,36 @@
+#include <lpc214x.h>
+void delay(unsigned int count);
+// 7-Segment Display Encoding for 0-9 (Common Cathode)
+unsigned char segment_codes[10] = {
+    0x3F,  // 0
+    0x06,  // 1
+    0x5B,  // 2
+    0x4F,  // 3
+    0x66,  // 4
+    0x6D,  // 5
+    0x7D,  // 6
+    0x07,  // 7
+    0x7F,  // 8
+    0x6F   // 9
+};
+int main() {
+    int i;  // Declare i outside the loop for older compilers
+
+     // Configure P0.0 - P0.6 as output for 7-segment display
+    IODIR0 |= 0x7F;  // Set P0.0 - P0.6 as output
+
+   while (1) {
+        for (i = 0; i < 10; i++) {  // Use i (declared outside)
+            IOCLR0 = 0x7F;  // Clear previous value
+            IOSET0 = segment_codes[i];  // Set new digit
+            delay(10000000);  // Delay to see the number
+        }
+    }
+}
+
+// Simple delay function
+void delay(unsigned int count) {
+    while (count--) {
+        // Waste time for delay
+    }
+}
