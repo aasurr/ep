@@ -1,0 +1,20 @@
+#include <lpc214x.h>
+#define RELAY_PIN (1 << 5)  // P0.5 connected to relay module
+void delay(unsigned int count);
+int main() {
+    // Configure P0.5 as output for relay control
+    IODIR0 |= RELAY_PIN;
+        while (1) {
+        IOSET0 = RELAY_PIN;  // Turn ON relay
+        delay(1000000);      // Wait for some time
+        IOCLR0 = RELAY_PIN;  // Turn OFF relay
+        delay(1000000);      // Wait for some time
+    }
+}
+// Simple delay function
+void delay(unsigned int count) {
+    while (count--) {
+        // Waste time for delay
+    }
+}
+
