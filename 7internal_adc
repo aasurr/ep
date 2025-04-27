@@ -1,0 +1,96 @@
+#include <LPC214x.h>     // Header file for LPC2148
+
+#define TIMER_START T0TCR = 0x01    // Macro to start Timer0
+
+// Function Prototypes
+void adc_init(void);
+void uart_init(void);
+void uart_tx(unsigned int temp);
+void adc_data(void)__irq;
+void timer_init(void);
+void vic_init(void);
+
+unsigned char timer_flag = 0;       // Flag to indicate Timer event
+
+int main(void)
+{
+    PINSEL0 = 0x00000005;    // Configure P0.0 (TXD0) and P0.1 (RXD0) for UART0
+    PINSEL1 |= (1 << 26);    // Configure P0.28 as AD1.1 (ADC input)
+
+    uart_init();             // Initialize UART0
+    adc_init();              // Initialize ADC1
+    vic_init();              // Configure interrupts
+    timer_init();            // Initialize Timer0
+    TIMER_START;             // Start Timer
+
+    while(1)
+    {
+        if(timer_flag)       // If Timer flag is set
+        {
+            timer_flag = 0;  // Clear the flag
+            TIMER_START;     // Restart Timer
+        }
+    }
+}
+
+// Timer0 Initialization
+void timer_init(void)
+{
+    T0TCR = 0x02;        // Reset Timer
+    T0PR = 60000;        // Prescaler to generate ~1ms delay (assuming 60MHz PCLK)
+    T0MR0 = 1000;        // Match after 1000 ms (i.e., 1 second)
+    T0MCR = 0x03;        // Interrupt and Reset on MR0
+}
+
+// VIC (Vectored Interrupt Controller) Setup
+void vic_init(void)
+{
+    VICIntEnable = 1 << 18;          // Enable ADC Interrupt (AD1INT on interrupt 18)
+    VICVectCntl0 = 0x20 | 18;         // Set Slot 0 for ADC Interrupt
+    VICVectAddr0 = (unsigned)adc_data; // Set ISR address for ADC
+}
+
+// ADC1 Initialization
+void adc_init(void)
+{
+    AD1CR = (1 << 1) | (4 << 8) | (1 << 21);  // Select AD1.1, set CLKDIV, power ON ADC
+    AD1INTEN = 0x02;                          // Enable interrupt for AD1.1
+}
+
+// ADC Interrupt Service Routine
+void adc_data(void)__irq
+{
+    unsigned int val = (AD1DR1 >> 6) & 0x3FF;  // Extract 10-bit ADC result
+    uart_tx(val);                              // Send ADC value over UART
+    timer_flag = 1;                            // Set timer flag
+    AD1CR &= ~(1 << 24);                       // Stop ADC Conversion
+    VICVectAddr = 0;                           // Acknowledge Interrupt
+}
+
+// UART0 Initialization
+void uart_init(void)
+{
+    U0LCR = 0x83;    // Enable DLAB (Divisor Latch Access Bit), 8-bit word length
+    U0DLL = 97;      // Set baud rate 9600 (assuming 15MHz PCLK)
+    U0DLM = 0;
+    U0LCR = 0x03;    // Disable DLAB
+}
+
+// UART0 Transmit Function
+void uart_tx(unsigned int val)
+{
+    char str[5];
+    int i;
+
+    str[0] = (val / 1000) + '0';        // Extract thousands place
+    str[1] = (val / 100) % 10 + '0';     // Extract hundreds place
+    str[2] = (val / 10) % 10 + '0';      // Extract tens place
+    str[3] = (val % 10) + '0';           // Extract ones place
+    str[4] = '\n';                       // New line for formatting
+
+    for(i = 0; i < 5; i++)
+    {
+        while(!(U0LSR & 0x20));          // Wait until UART THR is empty
+        U0THR = str[i];                  // Transmit character
+    }
+}
