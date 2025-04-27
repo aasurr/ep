@@ -1,0 +1,36 @@
+#include <lpc214x.h>
+
+const unsigned char PAN_LOGO[] = { 0xFF, 0x81, 0xBD, 0xA5, 0xA5, 0xBD, 0x81, 0xFF };
+const unsigned char BMP_IMG[]  = { 0x00, 0x7E, 0x42, 0x5A, 0x5A, 0x42, 0x7E, 0x00 };
+const unsigned char CMD[]      = { 0x3E, 0x0C, 0x01, 0x06, 0x80 };
+
+#define PORT (*((volatile unsigned long *)&IO0PIN))
+#define D0_PIN 8
+
+void Delay(void) {
+    volatile int i;
+    for (i = 0; i < 30000; i++);
+}
+
+void SendArray(const unsigned char *arr, int n) {
+    int i;
+    for (i = 0; i < n; i++) {
+        PORT = arr[i];
+        Delay();
+    }
+}
+
+int main(void) {
+    PORT |= (1 << D0_PIN);  // Dummy Init (set D0 high)
+
+    Delay();
+    SendArray(PAN_LOGO, 8);
+    Delay();
+    SendArray(BMP_IMG, 8);
+    Delay();
+    SendArray(CMD, 5);
+
+    while (1);
+}
+
+
