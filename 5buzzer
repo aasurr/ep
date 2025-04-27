@@ -1,0 +1,24 @@
+#include <lpc214x.h>
+#define BUZZER_PIN (1 << 6)  // P0.6 connected to Buzzer
+
+void delay(unsigned int count);
+
+int main() {
+    // Configure P0.6 as output for buzzer control
+    IODIR0 |= BUZZER_PIN;
+
+    while (1) {
+        IOSET0 = BUZZER_PIN;  // Turn ON buzzer
+        delay(500000);        // Delay for some time
+
+        IOCLR0 = BUZZER_PIN;  // Turn OFF buzzer
+        delay(500000);        // Delay for some time
+    }
+}
+
+// Simple delay function
+void delay(unsigned int count) {
+    while (count--) {
+        // Waste time for delay
+    }
+}
