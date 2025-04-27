@@ -1,0 +1,19 @@
+#include <lpc214x.h>
+void delay (unsigned int count);
+
+int main ()
+{
+	IODIR0 = 0xFFFFFFFF;
+  while(1){
+       IOSET0=0xFFFFFFFF;		
+       delay (500000);
+       IOCLR0 = 0xFFFFFFFF;
+       delay (500000);
+	}
+}
+void delay (unsigned int count)
+{
+	while (count --)
+{
+}
+}
